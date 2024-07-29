@@ -2,6 +2,9 @@
 
 import React from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { auth } from "../../../../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 type Inputs = {
   email: string;
@@ -9,6 +12,8 @@ type Inputs = {
 };
 
 function Register() {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -16,7 +21,19 @@ function Register() {
   } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log(data);
+    await createUserWithEmailAndPassword(auth, data.email, data.password)
+      .then((useCredential) => {
+        const user = useCredential.user;
+        router.push("/auth/login");
+      })
+      .catch((error) => {
+        // alert(error);
+        if (error.code === "auth/email-already-in-use") {
+          alert("このメールアドレスはすでに使用されています。");
+        } else {
+          alert(error.message);
+        }
+      });
   };
 
   return (
@@ -51,7 +68,7 @@ function Register() {
             Password
           </label>
           <input
-            type="text"
+            type="password"
             {...register("password", {
               required: "パスワードは必須です。",
               minLength: {
